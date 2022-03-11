@@ -35,14 +35,14 @@ async function main() {
   if (!addressBook.wmotif) {
     throw new Error("Missing WMOTIF address in address book.");
   }
-  if (!protocolAddressBook.item) {
-    throw new Error("Missing Item address in protocol address book.");
-  }
-  if (addressBook.itemListing) {
-    throw new Error(
-      "itemListing already in address book, it must be moved before deploying."
-    );
-  }
+  // if (!protocolAddressBook.item) {
+  //   throw new Error("Missing Item address in protocol address book.");
+  // }
+  // if (addressBook.itemListing) {
+  //   throw new Error(
+  //     "itemListing already in address book, it must be moved before deploying."
+  //   );
+  // }
 
   // We get the contract to deploy
   const ItemListing = (await ethers.getContractFactory(
@@ -55,7 +55,8 @@ async function main() {
   );
   const impl = await ItemListing.deploy(
     protocolAddressBook.item,
-    addressBook.wmotif
+    addressBook.wmotif,
+    "8107"
   );
   console.log(
     `Item Listing deploying to ${impl.address}. Awaiting confirmation...`
@@ -68,64 +69,64 @@ async function main() {
 
 
 
-  //Space
-  if (!protocolAddressBook.space) {
-    throw new Error("Missing Space address in protocol address book.");
-  }
-  if (addressBook.spaceListing) {
-    throw new Error(
-      "spaceListing already in address book, it must be moved before deploying."
-    );
-  }
-  const SpaceListing = (await ethers.getContractFactory(
-    "SpaceListing",
-    wallet
-  )) as SpaceListing;
-  console.log(
-    `Deploying SpaceListing from deployment address ${wallet.address}...`
-  );
-  const implSpace = await SpaceListing.deploy(
-    protocolAddressBook.space,
-    addressBook.wmotif 
-  );
-  console.log(
-    `SpaceListing deploying to ${implSpace.address}. Awaiting confirmation...`
-  );
-  await implSpace.deployed();
-  addressBook.spaceListing = implSpace.address;
-  await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
-  console.log("SpaceListing contracts deployed");
+  // //Space
+  // if (!protocolAddressBook.space) {
+  //   throw new Error("Missing Space address in protocol address book.");
+  // }
+  // if (addressBook.spaceListing) {
+  //   throw new Error(
+  //     "spaceListing already in address book, it must be moved before deploying."
+  //   );
+  // }
+  // const SpaceListing = (await ethers.getContractFactory(
+  //   "SpaceListing",
+  //   wallet
+  // )) as SpaceListing;
+  // console.log(
+  //   `Deploying SpaceListing from deployment address ${wallet.address}...`
+  // );
+  // const implSpace = await SpaceListing.deploy(
+  //   protocolAddressBook.space,
+  //   addressBook.wmotif 
+  // );
+  // console.log(
+  //   `SpaceListing deploying to ${implSpace.address}. Awaiting confirmation...`
+  // );
+  // await implSpace.deployed();
+  // addressBook.spaceListing = implSpace.address;
+  // await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
+  // console.log("SpaceListing contracts deployed");
 
-  //Avatar
-  if (!protocolAddressBook.avatar) {
-    throw new Error("Missing Avatar address in protocol address book.");
-  }
-  if (addressBook.avatarListing) {
-    throw new Error(
-      "avatarListing already in address book, it must be moved before deploying."
-    );
-  }
-  const AvatarListing = (await ethers.getContractFactory(
-    "AvatarListing",
-    wallet
-  )) as AvatarListing;
-  console.log(
-    `Deploying AvatarListing from deployment address ${wallet.address}...`
-  );
-  const implAvatar = await AvatarListing.deploy(
-    protocolAddressBook.avatar,
-    addressBook.wmotif 
-  );
-  console.log(
-    `AvatarListing deploying to ${implAvatar.address}. Awaiting confirmation...`
-  );
-  await implAvatar.deployed();
-  addressBook.avatarListing = implAvatar.address;
-  await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
-  console.log("AvatarListing contracts deployed");
+  // //Avatar
+  // if (!protocolAddressBook.avatar) {
+  //   throw new Error("Missing Avatar address in protocol address book.");
+  // }
+  // if (addressBook.avatarListing) {
+  //   throw new Error(
+  //     "avatarListing already in address book, it must be moved before deploying."
+  //   );
+  // }
+  // const AvatarListing = (await ethers.getContractFactory(
+  //   "AvatarListing",
+  //   wallet
+  // )) as AvatarListing;
+  // console.log(
+  //   `Deploying AvatarListing from deployment address ${wallet.address}...`
+  // );
+  // const implAvatar = await AvatarListing.deploy(
+  //   protocolAddressBook.avatar,
+  //   addressBook.wmotif 
+  // );
+  // console.log(
+  //   `AvatarListing deploying to ${implAvatar.address}. Awaiting confirmation...`
+  // );
+  // await implAvatar.deployed();
+  // addressBook.avatarListing = implAvatar.address;
+  // await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
+  // console.log("AvatarListing contracts deployed");
 
   //Land
-  if (!protocolAddressBook.land) {
+  /*if (!protocolAddressBook.land) {
     throw new Error("Missing Land address in protocol address book.");
   }
   if (addressBook.landListing) {
@@ -150,7 +151,7 @@ async function main() {
   await implLand.deployed();
   addressBook.landListing = implLand.address;
   await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
-  console.log("LandListing contracts deployed");
+  console.log("LandListing contracts deployed");*/
 
 
 

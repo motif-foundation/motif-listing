@@ -30,6 +30,7 @@ contract ItemListing is IItemListing, ReentrancyGuard {
     address public motif; 
     address public wmotifAddress; 
     mapping(uint256 => IItemListing.Listing) public listings; 
+    string public itemListingIdentifier;
     
     bytes4 constant interfaceId = 0x80ac58cd;  
 
@@ -40,7 +41,7 @@ contract ItemListing is IItemListing, ReentrancyGuard {
         _;
     }
  
-    constructor(address _motif, address _wmotif) public {
+    constructor(address _motif, address _wmotif, string memory itemListingIdentifierString) public {
         require(
             IERC165(_motif).supportsInterface(interfaceId),
             "Doesn't support NFT interface"
@@ -48,7 +49,8 @@ contract ItemListing is IItemListing, ReentrancyGuard {
         motif = _motif;
         wmotifAddress = _wmotif;
         timeBuffer = 20 * 60;  
-        minBidIncrementPercentage = 5;  
+        minBidIncrementPercentage = 5; 
+        itemListingIdentifier = itemListingIdentifierString; 
     }
      
     function createListing(
@@ -125,6 +127,15 @@ contract ItemListing is IItemListing, ReentrancyGuard {
         listings[listingId].listPrice = listPrice;
 
         emit ListingListPriceUpdated(listingId, listings[listingId].tokenId, listings[listingId].tokenContract, listPrice);
+    }
+
+    function getItemListingIdentifier()
+        external
+        view
+        override
+        returns (string memory)
+    {
+        return itemListingIdentifier;
     }
 
     function createBid(uint256 listingId, uint256 amount)

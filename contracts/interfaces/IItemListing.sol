@@ -91,6 +91,11 @@ interface IItemListing {
         address tokenOwner
     );
 
+     function getItemListingIdentifier()
+     external
+     view
+     returns (string memory); 
+
     function createListing(
         uint256 tokenId,
         address tokenContract,
