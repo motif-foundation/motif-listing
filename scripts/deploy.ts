@@ -63,10 +63,8 @@ async function main() {
   addressBook.itemListing = impl.address;
   await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
 
-  console.log("Item Listing contracts deployed 📿");
-
-
-
+  console.log("Item Listing contracts deployed 📿"); 
+ 
   //Space
   if (!protocolAddressBook.space) {
     throw new Error("Missing Space address in protocol address book.");
@@ -149,7 +147,7 @@ async function main() {
   await implLand.deployed();
   addressBook.landListing = implLand.address;
   await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
-  console.log("LandListing contracts deployed");
+  console.log("LandListing contracts deployed"); 
  
 
 }
