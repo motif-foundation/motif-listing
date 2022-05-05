@@ -1,6 +1,6 @@
 {
   "name": "@motif-foundation/listing",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "private": false, 
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
-    "@motif-foundation/asset": "^1.0.21",
+    "@motif-foundation/asset": "^1.0.22",
     "dotenv": "^8.2.0",
     "fs-extra": "^9.1.0",
     "minimist": "^1.2.5",

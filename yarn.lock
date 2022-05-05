@@ -510,10 +510,10 @@
     "@ethersproject/properties" "^5.5.0"
     "@ethersproject/strings" "^5.5.0"
 
-"@motif-foundation/asset@^1.0.21":
-  version "1.0.21"
-  resolved "https://registry.yarnpkg.com/@motif-foundation/asset/-/asset-1.0.21.tgz#adb6c90efae943563d0ed2c942406c9365586acc"
-  integrity sha512-5mh8WrJSCTA2UcCrTRQxkbeaCBk4KwPlpr9fdi5573WUf5LG6CQbagRGwaeeAhNDxto64afskc7IkyHLhHXtTQ==
+"@motif-foundation/asset@^1.0.22":
+  version "1.0.22"
+  resolved "https://registry.yarnpkg.com/@motif-foundation/asset/-/asset-1.0.22.tgz#e20ccfd3945564be04d536b84a61f8855814a2e1"
+  integrity sha512-XXSMep4/H16ygWXFRasCPeIEdUoeZ+lbh939PdCSdl1o7ityd0dw2MLrxWRMQysK4EQKPc0WEJoaYV6eJISKPQ==
   dependencies:
     ethers "^5.0.19"
     truffle-flattener "^1.5.0"
