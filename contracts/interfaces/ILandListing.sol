@@ -103,6 +103,18 @@ interface ILandListing {
         address listCurrency
     ) external returns (uint256);
 
+    function createMultipleListings(
+			uint256[] calldata tokenIds,
+			address tokenContract,
+			uint256 startsAt,
+			uint256 duration,
+			uint256[] calldata listPrices,
+			uint8 listType,
+			address payable intermediary,
+			uint8 intermediaryFeePercentages,
+			address listCurrency
+    ) external returns (uint256[] memory);
+
     function setListingApproval(uint256 listingId, bool approved) external;
 
     function setListingDropApproval(uint256 listingId, bool approved, uint256 startsAt) external;

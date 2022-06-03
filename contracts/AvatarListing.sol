@@ -165,7 +165,7 @@ contract AvatarListing is IAvatarListing, ReentrancyGuard {
                  listings[listingId].tokenId,
                  amount
              ),
-             "Bid invalid for share splitting"
+             "Contract is not motif avatar or Bid invalid for share splitting"
          );
  
  
@@ -212,61 +212,61 @@ contract AvatarListing is IAvatarListing, ReentrancyGuard {
             );
         }
     }
- 
-    function endListing(uint256 listingId) external override listingExists(listingId) nonReentrant {
+   
+   function endListing(uint256 listingId) external override listingExists(listingId) nonReentrant {
         require(
             (listings[listingId].listType == 1 || listings[listingId].listType == 2),
                 "Must be bidding or drop listType"
         );
         require(
-            uint256(listings[listingId].firstBidTime) != 0,
-            "Listing hasn't begun"
-        );
-        require(
-            block.timestamp >= listings[listingId].startsAt,
-            "List is not active"
-        );
-        require(
             block.timestamp >=
             listings[listingId].firstBidTime.add(listings[listingId].duration),
             "Listing hasn't completed"
-        );
+        ); 
+        _handleEndListing(listingId); 
+   } 
 
-        address currency = listings[listingId].listCurrency == address(0) ? wmotifAddress : listings[listingId].listCurrency;
-        uint256 intermediaryFee = 0;
+	function endFixedPriceListing(uint256 listingId, uint256 amount)
+	   external
+	   override
+	   payable 
+	   listingExists(listingId)
+	   nonReentrant
+	    {   
+	    	require(
+            listings[listingId].listType == 3,
+              "Must be fixed price listType"
+         ); 
 
-        uint256 tokenOwnerProfit = listings[listingId].amount;
+	    	require(listings[listingId].approved, 
+  		  		"Listing must be approved by intermediary"
+  		   );  
 
+	      require(
+            amount == listings[listingId].listPrice,
+                "Must send listPrice"
+         );  
+
+         listings[listingId].firstBidTime = block.timestamp;
       
-         (bool success, uint256 remainingProfit) = _handleMotifListingSettlement(listingId);
-         tokenOwnerProfit = remainingProfit;
-         if(success != true) {
-             _handleOutgoingBid(listings[listingId].bidder, listings[listingId].amount, listings[listingId].listCurrency);
-             _cancelListing(listingId);
-             return;
-         } 
+         _handleIncomingBid(amount, listings[listingId].listCurrency);
 
-        if(listings[listingId].intermediary != address(0)) {
-            intermediaryFee = tokenOwnerProfit.mul(listings[listingId].intermediaryFeePercentage).div(100);
-            tokenOwnerProfit = tokenOwnerProfit.sub(intermediaryFee);
-            _handleOutgoingBid(listings[listingId].intermediary, intermediaryFee, listings[listingId].listCurrency);
-        }
-        _handleOutgoingBid(listings[listingId].tokenOwner, tokenOwnerProfit, listings[listingId].listCurrency);
-
-        emit ListingEnded(
+         listings[listingId].amount = amount;
+         listings[listingId].bidder = msg.sender;
+ 
+         emit ListingBid(
             listingId,
             listings[listingId].tokenId,
             listings[listingId].tokenContract,
-            listings[listingId].tokenOwner,
-            listings[listingId].intermediary,
-            listings[listingId].bidder,
-            tokenOwnerProfit,
-            intermediaryFee,
-            currency
-        );
-        delete listings[listingId];
-    }
-
+            msg.sender,
+            amount,
+            true, 
+            false
+         );    
+       
+		  _handleEndListing(listingId); 
+	  }  
+	  
     function cancelListing(uint256 listingId) external override nonReentrant listingExists(listingId) {
         require(
             listings[listingId].tokenOwner == msg.sender || listings[listingId].intermediary == msg.sender,
@@ -279,67 +279,21 @@ contract AvatarListing is IAvatarListing, ReentrancyGuard {
         _cancelListing(listingId);
     } 
 
-	 function endFixedPriceListing(uint256 listingId, uint256 amount)
-	    external
-	    override
-	    payable 
-	    nonReentrant
-	    { 
-		     _handleEndFixedPriceListing(listingId, amount); 
-	    } 
- 
+	 function _handleEndListing(uint256 listingId) internal { 
+		   require(
+            uint256(listings[listingId].firstBidTime) != 0,
+            "Listing hasn't begun"
+         );
+         require(
+             block.timestamp >= listings[listingId].startsAt,
+            "Listing is not active"
+         ); 
 
-   function _handleEndFixedPriceListing(uint256 listingId, uint256 amount) internal { 
-   	 	require(_exists(listingId), "Listing doesn't exist");
-  			require(listings[listingId].approved, "Listing must be approved by intermediary"); 
- 			require(
-            listings[listingId].listType == 3,
-                "Must be fixed price listType"
-        );
-        require(
-            block.timestamp >= listings[listingId].startsAt,
-            "List is not active"
-        ); 
-        require(
-            listings[listingId].firstBidTime == 0 ||
-            block.timestamp <
-            listings[listingId].firstBidTime.add(listings[listingId].duration),
-            "Listing expired"
-        ); 
-        require(
-            amount == listings[listingId].listPrice,
-                "Must send listPrice"
-        ); 
-	     require(
-	          IAvatarExchange(IAvatarExtended(motif).avatarExchangeContract()).isValidBid(
-	              listings[listingId].tokenId,
-	              amount
-	          ),
-	          "Bid invalid for share splitting"
-	      );  
+         address currency = listings[listingId].listCurrency == address(0) ? wmotifAddress : listings[listingId].listCurrency;
+         uint256 intermediaryFee = 0;
 
-        listings[listingId].firstBidTime = block.timestamp;
-      
-        _handleIncomingBid(amount, listings[listingId].listCurrency);
+         uint256 tokenOwnerProfit = listings[listingId].amount;
 
-        listings[listingId].amount = amount;
-        listings[listingId].bidder = msg.sender;
- 
-        emit ListingBid(
-            listingId,
-            listings[listingId].tokenId,
-            listings[listingId].tokenContract,
-            msg.sender,
-            amount,
-            true, 
-            false
-        ); 
-
- 		  address currency = listings[listingId].listCurrency == address(0) ? wmotifAddress : listings[listingId].listCurrency;
-        uint256 intermediaryFee = 0;
-
-        uint256 tokenOwnerProfit = listings[listingId].amount; 
-      
          (bool success, uint256 remainingProfit) = _handleMotifListingSettlement(listingId);
          tokenOwnerProfit = remainingProfit;
          if(success != true) {
@@ -366,9 +320,9 @@ contract AvatarListing is IAvatarListing, ReentrancyGuard {
             intermediaryFee,
             currency
         );
-        delete listings[listingId];  
+        delete listings[listingId]; 
+   } 
 
-   }
 
     function _handleIncomingBid(uint256 amount, address currency) internal { 
         if(currency == address(0)) {

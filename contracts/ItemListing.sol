@@ -64,45 +64,33 @@ contract ItemListing is IItemListing, ReentrancyGuard {
         uint8 intermediaryFeePercentage,
         address listCurrency
     ) public override nonReentrant returns (uint256) {
-        require(
-            IERC165(tokenContract).supportsInterface(interfaceId),
-            "tokenContract does not support ERC721 interface"
-        );
-        require(intermediaryFeePercentage < 100, "intermediaryFeePercentage must be less than 100");
-        address tokenOwner = IERC721(tokenContract).ownerOf(tokenId);
-        require(msg.sender == IERC721(tokenContract).getApproved(tokenId) || msg.sender == tokenOwner, "Caller must be approved or owner for token id");
-        uint256 listingId = _listingIdTracker.current();
-
-        listings[listingId] = Listing({
-            tokenId: tokenId,
-            tokenContract: tokenContract,
-            approved: false,
-            amount: 0,
-            startsAt: startsAt,
-            duration: duration,
-            firstBidTime: 0,
-            listPrice: listPrice,
-            listType: listType, //1 - bid, 2 - drop bid, 3 - fixed
-            intermediaryFeePercentage: intermediaryFeePercentage,
-            tokenOwner: tokenOwner,
-            bidder: address(0),
-            intermediary: intermediary,
-            listCurrency: listCurrency
-        });
-
-        IERC721(tokenContract).transferFrom(tokenOwner, address(this), tokenId);
-
-        _listingIdTracker.increment();
-
-        emit ListingCreated(listingId, tokenId, tokenContract, startsAt, duration, listPrice, listType, tokenOwner, intermediary, intermediaryFeePercentage, listCurrency);
-
-
-        if(listings[listingId].intermediary == address(0) || intermediary == tokenOwner) {
-            _approveListing(listingId, true);
-        }
-
-        return listingId;
+    	   _handleCreateListing(tokenId,tokenContract,startsAt,duration,listPrice,listType,intermediary,intermediaryFeePercentage,listCurrency);
     }
+
+	function createMultipleListings(
+  		  uint256[] memory tokenIds,
+        address tokenContract,
+        uint256 startsAt,
+        uint256 duration,
+        uint256[] memory listPrices,
+        uint8 listType,
+        address payable intermediary,
+        uint8 intermediaryFeePercentage,
+        address listCurrency
+   )  public override nonReentrant returns (uint256[] memory ) { 
+
+    	require(tokenIds.length > 0, "tokenIds must not be empty");
+    	require(tokenIds.length <= 10000, "Length of tokenIds must be equal to or less than 10000");
+    	require(tokenIds.length == listPrices.length, "Length of tokenIds and listPrices must match");
+ 
+		uint256[] memory listingArray = new uint256[](tokenIds.length); 
+
+    	for(uint i=0; i<tokenIds.length; i++){ 
+  			uint256 listingId = _handleCreateListing(tokenIds[i],tokenContract,startsAt,duration,listPrices[i],listType,intermediary,intermediaryFeePercentage,listCurrency);
+  			listingArray[i] = listingId;
+  		}  
+  		return listingArray;
+	 }  
 
     function setListingApproval(uint256 listingId, bool approved) external override listingExists(listingId) {
         require(msg.sender == listings[listingId].intermediary, "Must be listing intermediary");
@@ -172,13 +160,15 @@ contract ItemListing is IItemListing, ReentrancyGuard {
             ),
             "Must send more than last bid by minBidIncrementPercentage amount"
         );  
-	     require(
-	          IItemExchange(IItemExtended(motif).itemExchangeContract()).isValidBid(
-	              listings[listingId].tokenId,
-	              amount
-	          ),
-	          "Bid invalid for share splitting"
-	      );
+         if(listings[listingId].tokenContract == motif) {
+		     require(
+		          IItemExchange(IItemExtended(motif).itemExchangeContract()).isValidBid(
+		              listings[listingId].tokenId,
+		              amount
+		          ),
+		          "Bid invalid for share splitting"
+		      );
+	  		}
  
         if(listings[listingId].firstBidTime == 0) {
             listings[listingId].firstBidTime = block.timestamp;
@@ -224,59 +214,69 @@ contract ItemListing is IItemListing, ReentrancyGuard {
         }
     }
  
-    function endListing(uint256 listingId) external override listingExists(listingId) nonReentrant {
+   function endListing(uint256 listingId) external override listingExists(listingId) nonReentrant {
         require(
             (listings[listingId].listType == 1 || listings[listingId].listType == 2),
                 "Must be bidding or drop listType"
         );
         require(
-            uint256(listings[listingId].firstBidTime) != 0,
-            "Listing hasn't begun"
-        );
-        require(
-            block.timestamp >= listings[listingId].startsAt,
-            "List is not active"
-        );
-        require(
             block.timestamp >=
             listings[listingId].firstBidTime.add(listings[listingId].duration),
             "Listing hasn't completed"
-        );
+        ); 
+        _handleEndListing(listingId); 
+   } 
 
-         address currency = listings[listingId].listCurrency == address(0) ? wmotifAddress : listings[listingId].listCurrency;
-         uint256 intermediaryFee = 0;
+	function endFixedPriceListing(uint256 listingId, uint256 amount)
+	   external
+	   override 
+	   payable
+	   listingExists(listingId)
+	   nonReentrant
+	    {   
+	    	require(
+            listings[listingId].listType == 3,
+              "Must be fixed price listType"
+         ); 
 
-         uint256 tokenOwnerProfit = listings[listingId].amount;
+	    	require(listings[listingId].approved, 
+  		  		"Listing must be approved by intermediary"
+  		   );  
 
-         (bool success, uint256 remainingProfit) = _handleMotifListingSettlement(listingId);
-         tokenOwnerProfit = remainingProfit;
-         if(success != true) {
-             _handleOutgoingBid(listings[listingId].bidder, listings[listingId].amount, listings[listingId].listCurrency);
-             _cancelListing(listingId);
-             return;
-         } 
+	      require(
+            amount == listings[listingId].listPrice,
+                "Must send listPrice"
+         );  
 
-        if(listings[listingId].intermediary != address(0)) {
-            intermediaryFee = tokenOwnerProfit.mul(listings[listingId].intermediaryFeePercentage).div(100);
-            tokenOwnerProfit = tokenOwnerProfit.sub(intermediaryFee);
-            _handleOutgoingBid(listings[listingId].intermediary, intermediaryFee, listings[listingId].listCurrency);
-        }
-        _handleOutgoingBid(listings[listingId].tokenOwner, tokenOwnerProfit, listings[listingId].listCurrency);
+         if(listings[listingId].tokenContract == motif) {
+		     require(
+		          IItemExchange(IItemExtended(motif).itemExchangeContract()).isValidBid(
+		              listings[listingId].tokenId,
+		              amount
+		          ),
+		          "Bid invalid for share splitting"
+		      );
+	  		} 
 
-        emit ListingEnded(
+         listings[listingId].firstBidTime = block.timestamp;
+      
+         _handleIncomingBid(amount, listings[listingId].listCurrency);
+
+         listings[listingId].amount = amount;
+         listings[listingId].bidder = msg.sender;
+ 
+         emit ListingBid(
             listingId,
             listings[listingId].tokenId,
             listings[listingId].tokenContract,
-            listings[listingId].tokenOwner,
-            listings[listingId].intermediary,
-            listings[listingId].bidder,
-            tokenOwnerProfit,
-            intermediaryFee,
-            currency
-        );
-        delete listings[listingId];
-    }
-
+            msg.sender,
+            amount,
+            true, 
+            false
+         );    
+       
+		  _handleEndListing(listingId); 
+	  }  
     
     function cancelListing(uint256 listingId) external override nonReentrant listingExists(listingId) {
         require(
@@ -290,89 +290,85 @@ contract ItemListing is IItemListing, ReentrancyGuard {
         _cancelListing(listingId);
     }   
 
-	 function endFixedPriceListing(uint256 listingId, uint256 amount)
-	    external
-	    override
-	    payable 
-	    nonReentrant
-	    { 
-		     _handleEndFixedPriceListing(listingId, amount); 
-	    }
-
-	   function endFixedPriceListings(uint256[] calldata listingIds, uint256[] calldata amounts)
-	    external
-	    override
-	    payable 
-	    nonReentrant
-	    { 
-	    	require(listingIds.length > 0, "Listing ids must not be empty");
-	    	require(listingIds.length <= 50, "Length of listing ids must be equal to or less than 50");
-	    	require(listingIds.length == amounts.length, "Length of listing ids and amounts must match");
-
-	    	for(uint i=0; i<listingIds.length; i++){
-         	_handleEndFixedPriceListing(listingIds[i], amounts[i]); 
-     		} 
-		    
-	    } 
- 
-      function _handleEndFixedPriceListing(uint256 listingId, uint256 amount) internal { 
-   	 	require(_exists(listingId), "Listing doesn't exist");
-  			require(listings[listingId].approved, "Listing must be approved by intermediary"); 
- 			require(
-            listings[listingId].listType == 3,
-                "Must be fixed price listType"
+    function _handleCreateListing(
+			uint256 tokenId,
+			address tokenContract,
+			uint256 startsAt,
+			uint256 duration,
+			uint256 listPrice,
+			uint8 listType,
+			address payable intermediary,
+			uint8 intermediaryFeePercentage,
+			address listCurrency
+      ) internal returns(uint256) { 
+ 		  require(
+            IERC165(tokenContract).supportsInterface(interfaceId),
+            "tokenContract does not support ERC721 interface"
         );
-        require(
-            block.timestamp >= listings[listingId].startsAt,
-            "List is not active"
-        ); 
-        require(
-            listings[listingId].firstBidTime == 0 ||
-            block.timestamp <
-            listings[listingId].firstBidTime.add(listings[listingId].duration),
-            "Listing expired"
-        ); 
-        require(
-            amount == listings[listingId].listPrice,
-                "Must send listPrice"
-        ); 
-	     require(
-	          IItemExchange(IItemExtended(motif).itemExchangeContract()).isValidBid(
-	              listings[listingId].tokenId,
-	              amount
-	          ),
-	          "Bid invalid for share splitting"
-	      );  
+        require(intermediaryFeePercentage < 100, "intermediaryFeePercentage must be less than 100");
+        address tokenOwner = IERC721(tokenContract).ownerOf(tokenId);
+        require(msg.sender == IERC721(tokenContract).getApproved(tokenId) || msg.sender == tokenOwner, "Caller must be approved or owner for token id");
+        uint256 listingId = _listingIdTracker.current();
 
-        listings[listingId].firstBidTime = block.timestamp;
-      
-        _handleIncomingBid(amount, listings[listingId].listCurrency);
+        listings[listingId] = Listing({
+            tokenId: tokenId,
+            tokenContract: tokenContract,
+            approved: false,
+            amount: 0,
+            startsAt: startsAt,
+            duration: duration,
+            firstBidTime: 0,
+            listPrice: listPrice,
+            listType: listType, //1 - bid, 2 - drop bid, 3 - fixed
+            intermediaryFeePercentage: intermediaryFeePercentage,
+            tokenOwner: tokenOwner,
+            bidder: address(0),
+            intermediary: intermediary,
+            listCurrency: listCurrency
+        });
 
-        listings[listingId].amount = amount;
-        listings[listingId].bidder = msg.sender;
+        IERC721(tokenContract).transferFrom(tokenOwner, address(this), tokenId);
+
+        _listingIdTracker.increment();
+
+        emit ListingCreated(listingId, tokenId, tokenContract, startsAt, duration, listPrice, listType, tokenOwner, intermediary, intermediaryFeePercentage, listCurrency);
+
+        if(listings[listingId].intermediary == address(0) || intermediary == tokenOwner) {
+            _approveListing(listingId, true);
+        } 
+        return listingId; 
+    } 
  
-        emit ListingBid(
-            listingId,
-            listings[listingId].tokenId,
-            listings[listingId].tokenContract,
-            msg.sender,
-            amount,
-            true, 
-            false
-        ); 
+     function _handleEndListing(uint256 listingId) internal { 
+		   require(
+            uint256(listings[listingId].firstBidTime) != 0,
+            "Listing hasn't begun"
+         );
+         require(
+             block.timestamp >= listings[listingId].startsAt,
+            "Listing is not active"
+         ); 
 
- 		  address currency = listings[listingId].listCurrency == address(0) ? wmotifAddress : listings[listingId].listCurrency;
-        uint256 intermediaryFee = 0;
+         address currency = listings[listingId].listCurrency == address(0) ? wmotifAddress : listings[listingId].listCurrency;
+         uint256 intermediaryFee = 0;
 
-        uint256 tokenOwnerProfit = listings[listingId].amount; 
-      
-         (bool success, uint256 remainingProfit) = _handleMotifListingSettlement(listingId);
-         tokenOwnerProfit = remainingProfit;
-         if(success != true) {
-             _handleOutgoingBid(listings[listingId].bidder, listings[listingId].amount, listings[listingId].listCurrency);
-             _cancelListing(listingId);
-             return;
-         } 
+         uint256 tokenOwnerProfit = listings[listingId].amount;
+
+         if(listings[listingId].tokenContract == motif) {
+	         (bool success, uint256 remainingProfit) = _handleMotifListingSettlement(listingId);
+	         tokenOwnerProfit = remainingProfit;
+	         if(success != true) {
+	             _handleOutgoingBid(listings[listingId].bidder, listings[listingId].amount, listings[listingId].listCurrency);
+	             _cancelListing(listingId);
+	             return;
+	         } 
+	      } else { 
+            try IERC721(listings[listingId].tokenContract).safeTransferFrom(address(this), listings[listingId].bidder, listings[listingId].tokenId) {} catch {
+                _handleOutgoingBid(listings[listingId].bidder,listings[listingId].amount, listings[listingId].listCurrency);
+                _cancelListing(listingId);
+                return;
+            }
+        }
 
         if(listings[listingId].intermediary != address(0)) {
             intermediaryFee = tokenOwnerProfit.mul(listings[listingId].intermediaryFeePercentage).div(100);
@@ -392,9 +388,9 @@ contract ItemListing is IItemListing, ReentrancyGuard {
             intermediaryFee,
             currency
         );
-        delete listings[listingId];  
+        delete listings[listingId]; 
+   } 
 
-   }
 
     function _handleIncomingBid(uint256 amount, address currency) internal { 
         if(currency == address(0)) {

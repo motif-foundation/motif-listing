@@ -97,16 +97,28 @@ interface IItemListing {
      returns (string memory); 
 
     function createListing(
-        uint256 tokenId,
-        address tokenContract,
-        uint256 startsAt,
-        uint256 duration,
-        uint256 listPrice,
-        uint8 listType,
-        address payable intermediary,
-        uint8 intermediaryFeePercentages,
-        address listCurrency
+			uint256 tokenId,
+			address tokenContract,
+			uint256 startsAt,
+			uint256 duration,
+			uint256 listPrice,
+			uint8 listType,
+			address payable intermediary,
+			uint8 intermediaryFeePercentages,
+			address listCurrency
     ) external returns (uint256);
+ 
+    function createMultipleListings(
+			uint256[] calldata tokenIds,
+			address tokenContract,
+			uint256 startsAt,
+			uint256 duration,
+			uint256[] calldata listPrices,
+			uint8 listType,
+			address payable intermediary,
+			uint8 intermediaryFeePercentages,
+			address listCurrency
+    ) external returns (uint256[] memory);
 
     function setListingApproval(uint256 listingId, bool approved) external;
 
@@ -117,8 +129,6 @@ interface IItemListing {
     function createBid(uint256 listingId, uint256 amount) external payable;
 
     function endFixedPriceListing(uint256 listingId, uint256 amount) external payable; 
-
-    function endFixedPriceListings(uint256[] calldata listingIds, uint256[] calldata amounts) external payable; 
 
     function endListing(uint256 listingId) external;
 
