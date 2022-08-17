@@ -1,6 +1,6 @@
 {
   "name": "@motif-foundation/listing",
-  "version": "1.0.34",
+  "version": "1.0.36",
   "private": false, 
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,7 +29,7 @@
     "chai-as-promised": "^7.1.1",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.0.32",
-    "hardhat": "^2.1.1",
+    "hardhat": "^2.0.2",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-typechain": "^0.3.5",
     "prettier": "^2.2.1",
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
-    "@motif-foundation/asset": "^1.0.28",
+    "@motif-foundation/asset": "^1.0.29",
     "dotenv": "^8.2.0",
     "fs-extra": "^9.1.0",
     "minimist": "^1.2.5",
