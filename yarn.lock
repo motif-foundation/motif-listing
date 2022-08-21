@@ -713,10 +713,10 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@motif-foundation/asset@^1.0.31":
-  version "1.0.31"
-  resolved "https://registry.yarnpkg.com/@motif-foundation/asset/-/asset-1.0.31.tgz#d80c8d61d5e543faafd2155250713624fb026725"
-  integrity sha512-UAPljYvLUJHnp0aotY5TVZVuAGHsWmK9ws1rwPck+6nOPmEPMEg8TGAjr8SI5qczPLTz6zri9/sMeWoL8bXd1A==
+"@motif-foundation/asset@^1.0.37":
+  version "1.0.37"
+  resolved "https://registry.yarnpkg.com/@motif-foundation/asset/-/asset-1.0.37.tgz#86ca57b66da6ebc02e1cbeaaf46ab23a4fe116b6"
+  integrity sha512-Nz0IBcd1Kch4zuK2sg0NtyIVAdaI2nSNdpVrvDWdamolw1ZG6G3TMScKHvoCW/rn9mMtsfkMMz8aqFaApwXACA==
   dependencies:
     ethers "^5.0.19"
     truffle-flattener "^1.5.0"

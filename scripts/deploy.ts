@@ -125,7 +125,7 @@ async function main() {
   await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
   console.log("AvatarListing contracts deployed");
 
-  //Land
+ //  //Land
   if (!protocolAddressBook.land) {
     throw new Error("Missing Land address in protocol address book.");
   }
