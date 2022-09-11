@@ -94,9 +94,9 @@ contract AvatarListing is IAvatarListing, ReentrancyGuard {
         emit ListingCreated(listingId, tokenId, tokenContract, startsAt, duration, listPrice, listType, tokenOwner, intermediary, intermediaryFeePercentage, listCurrency);
 
 
-        if(listings[listingId].intermediary == address(0) || intermediary == tokenOwner) {
+        //if(listings[listingId].intermediary == address(0) || intermediary == tokenOwner) {
             _approveListing(listingId, true);
-        }
+        //}
 
         return listingId;
     }

@@ -125,33 +125,33 @@ async function main() {
   await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
   console.log("AvatarListing contracts deployed");
 
- //  //Land
-  if (!protocolAddressBook.land) {
-    throw new Error("Missing Land address in protocol address book.");
-  }
-  if (addressBook.landListing) {
-    throw new Error(
-      "landListing already in address book, it must be moved before deploying."
-    );
-  }
-  const LandListing = (await ethers.getContractFactory(
-    "LandListing",
-    wallet
-  )) as LandListing;
-  console.log(
-    `Deploying LandListing from deployment address ${wallet.address}...`
-  );
-  const implLand = await LandListing.deploy(
-    protocolAddressBook.land,
-    addressBook.wmotif 
-  );
-  console.log(
-    `LandListing deploying to ${implLand.address}. Awaiting confirmation...`
-  );
-  await implLand.deployed();
-  addressBook.landListing = implLand.address;
-  await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
-  console.log("LandListing contracts deployed");  
+ // //  //Land
+ //  if (!protocolAddressBook.land) {
+ //    throw new Error("Missing Land address in protocol address book.");
+ //  }
+ //  if (addressBook.landListing) {
+ //    throw new Error(
+ //      "landListing already in address book, it must be moved before deploying."
+ //    );
+ //  }
+ //  const LandListing = (await ethers.getContractFactory(
+ //    "LandListing",
+ //    wallet
+ //  )) as LandListing;
+ //  console.log(
+ //    `Deploying LandListing from deployment address ${wallet.address}...`
+ //  );
+ //  const implLand = await LandListing.deploy(
+ //    protocolAddressBook.land,
+ //    addressBook.wmotif 
+ //  );
+ //  console.log(
+ //    `LandListing deploying to ${implLand.address}. Awaiting confirmation...`
+ //  );
+ //  await implLand.deployed();
+ //  addressBook.landListing = implLand.address;
+ //  await fs.writeFile(addressPath, JSON.stringify(addressBook, null, 2));
+ //  console.log("LandListing contracts deployed");  
  
 
 }
